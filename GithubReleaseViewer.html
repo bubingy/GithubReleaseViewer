@@ -1,0 +1,144 @@
+<html>
+<title>Github Releases Viewer</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
+<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+<body>
+<div class="columns">
+    <div id="app" class="column is-8 is-offset-2">
+        <label class="label">input owner and repo in format: <span class="is-italic has-text-weight-light">owner/repo</span></label>
+        <div class="columns">
+            <div class="column field is-horizontal">
+                <input v-model="repo_info" class="input is-primary">
+            </div>
+            <div class="column field is-horizontal">
+                <button v-on:click="current_page=1;listReleases(current_page)" class="button is-primary is-rounded ">Query</button>
+            </div>
+        </div>
+
+        <div class="columns">
+            <div class="column field is-horizontal has-text-weight-light">
+                {{response_message}}
+            </div>
+        </div>
+        
+        <table class="table">
+            <thead><tr>
+                <th></th>
+                <th>Name</th>
+                <th>Tag</th>
+                <th></th>
+            </tr></thead>
+            <tbody>
+                <tr v-for="(release, index) in latest_releases">
+                    <th>{{(current_page-1)*50 + index + 1}}</th>
+                    <th>{{release.name}}</th>
+                    <th>{{release.tag_name}}</th>
+                    <th><button v-on:click="showReleaseDetail(release)" class="button is-info is-rounded is-fullwidth">detail</button></th>
+                </tr>
+                <tr v-show="latest_releases.length === 0">
+                    <th>
+                        <div class="has-text-weight-light">
+                            No data to show
+                        </div>
+                    </th>
+                </tr>
+                <div v-bind:class="{ 'is-active': show_release_detail }" class="modal">
+                    <div class="modal-background" v-on:click="show_release_detail=false"></div>
+                    <div class="modal-card">
+                        <header class="modal-card-head">
+                            <p class="modal-card-title">Release detail</p>
+                            <button class="delete" aria-label="close" v-on:click="show_release_detail=false"></button>
+                        </header>
+                        <section class="modal-card-body">
+                        <div v-if="selected_release!=null">
+                            <div class="columns is-mobile is-centered is-vcentered">
+                                <label class="column">Release name: </label> <p class="column">{{selected_release.name}}</p>
+                            </div>
+                            <div class="columns is-mobile is-centered is-vcentered">
+                                <label class="column">Release tag: </label><p class="column">{{selected_release.tag_name}}</p>
+                            </div>
+                            <div class="columns is-mobile is-centered is-vcentered">
+                                <label class="column">Github link: </label>
+                                <a class="column" v-bind:href="selected_release.html_url" target="_blank">{{selected_release.html_url}}</a>
+                            </div>
+                            <div class="columns is-mobile is-centered is-vcentered">
+                                <label class="column">Created at: </label><p class="column">{{selected_release.created_at}}</p>
+                            </div>
+                            <div class="columns is-mobile is-centered is-vcentered">
+                                <label class="column">Published at: </label><p class="column">{{selected_release.published_at}}</p>
+                            </div>
+                            <div class="columns is-mobile is-centered is-vcentered">
+                                <label class="column">Assets: </label>
+                                <p class="column">{{selected_release.assets.length}} assets released</p>
+                            </div>
+                            <div class="columns" v-for="asset in selected_release.assets">
+                                <div class="column is-mobile is-centered is-vcentered has-text-centered">
+                                    <a v-bind:href="asset.browser_download_url" target="_blank">{{asset.name}}</a></th>
+                                </div>
+                            </div>
+                        </div>
+                        </section>
+                    </div>
+                </div>
+            </tbody>
+        </table>
+        <div class="columns">
+            <nav class="pagination is-medium" role="navigation" aria-label="pagination">
+                <button v-bind:disabled="isFirstPage" class="pagination-previous"  v-on:click="previousPage">Previous</button>
+                <button v-bind:disabled="isLastPage" class="pagination-next" v-on:click="nextPage">Next page</button>
+            </nav>
+        </div>
+    </div>
+</div>    
+</body>
+<script>
+var app = new Vue({
+    el: '#app',
+    data: {
+        repo_info: 'microsoft/perfview',
+        response_message: "",
+        show_release_detail: false,
+        current_page: 1,
+        per_page: 50,
+        latest_releases: [],
+        selected_release: null
+    },
+    methods: {
+        listReleases: _listReleases,
+        showReleaseDetail: _showReleaseDetail,
+        previousPage: function(){_listReleases(--this.current_page)},
+        nextPage: function(){_listReleases(++this.current_page)}
+    },
+    computed: {
+        isFirstPage: function(){return this.current_page==1},
+        isLastPage: function(){return this.latest_releases.length<this.per_page}
+    }
+})
+function _listReleases(current_page) {
+    app.latest_releases = []
+    app.response_message = ""
+    var query_url = "https://api.github.com/repos/"+app.repo_info+"/releases?per_page="+app.per_page+"&page="+current_page
+    axios(
+        {
+            method: 'get',
+            url: query_url,
+        }
+    )
+    .then(function (response) {
+        app.latest_releases = response.data    
+        app.response_message = response.message
+    })
+    .catch(function (error) {
+        app.response_message = error.message
+        app.latest_releases = []
+    })
+}
+
+function _showReleaseDetail(release) {
+    app.show_release_detail = !app.show_release_detail
+    app.selected_release = release
+}
+
+</script>
+</html>
