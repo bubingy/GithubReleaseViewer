@@ -1,7 +1,7 @@
 <html>
 <title>Github Releases Viewer</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.3/css/bulma.min.css">
-<script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue@2"></script>
 <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 <body>
 <div class="columns">
@@ -96,7 +96,7 @@
 var app = new Vue({
     el: '#app',
     data: {
-        repo_info: 'microsoft/perfview',
+        repo_info: "",
         response_message: "",
         show_release_detail: false,
         current_page: 1,
